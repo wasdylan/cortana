@@ -1,0 +1,69 @@
+#!/usr/bin/ python
+
+import sys
+import os
+import re
+import sqlite3
+import difflib
+import nltk
+
+conn = sqlite3.connect("cerebrum.db")
+cursor = conn.cursor()
+
+def config():
+	conn = sqlite3.connect("cerebrum.db")
+	cursor = conn.cursor()
+	cursor.execute("""CREATE TABLE commands (
+					id INTEGER PRIMARY KEY,
+					noun text,
+					verb text,
+					module text
+					) 
+					""")
+	conn.close()
+	
+def addmodule(noun, verb, module):
+	cursor.execute("INSERT INTO commands (noun, verb, module) VALUES ('"+noun+"', '"+verb+"', '"+module+"')")
+	conn.commit()
+
+def think(input):
+	# assign shit to avoid errors
+	module = ""
+	N = ""
+	V = ""
+	P = ""
+	J = ""
+	
+	# analyze sentence
+	tokens = nltk.word_tokenize(input)
+	tagged = nltk.pos_tag(tokens)
+	print tagged
+	for tag in tagged:
+		if tag[1] == "NN":
+			N = tag[0]
+		if tag[1] == "VBZ" or tag[1] == "VB" or tag[1] == "VBP":
+			V = tag[0]
+		if tag[1] == "PRP":
+			P = tag[0]
+		if tag[1] == "JJ":
+			J = tag[0]
+	
+	# match interpreted data to command
+	query = "SELECT * FROM commands WHERE verb LIKE '%"+V+"%' AND noun LIKE '%"+N+"%' LIMIT 1"
+	for row in cursor.execute(query):
+		module=row[3]
+	
+	os.system("python modules/"+module+" %s %s %s %s" % (N, V, P, J))
+
+	# os.system("python modules/%s" % (module))
+	# os.system("python modules/%s|espeak" % (module))
+
+
+input = sys.argv[1]
+
+if input == "addcommand":
+	addmodule(sys.argv[2], sys.argv[3], sys.argv[4])
+elif input == "config":
+	config()
+else:
+	think(input)

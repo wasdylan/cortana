@@ -1,0 +1,7 @@
+#!/usr/lib/python
+
+import datetime
+
+now = datetime.datetime.now()
+time = "the current time is " + now.strftime("%I:%M %p")
+print time
