@@ -1,0 +1,31 @@
+CORTANA: an extendable and remotely-accessible personal manager AI written in Python.
+
+DEPENDENCIES:
+python (included in my linux distros, sudo apt-get install python)
+espeak (sudo apt-get install espeak)
+nltk (sudo pip install nltk)
+
+INSTALL:
+1. python cortana config
+2. done.
+
+USAGE:
+python cortana "what time is it?"
+
+UNDER DA HOOD:
+Cortana uses NLTK to match input with a "module," or piece of code written for a specific purpose. It then runs the identified module. This makes extending Cortana's capabilities extremely easy.
+
+ADDING YOUR OWN MODULES:
+1. Write your python module and save it in the /modules directory.
+2. run 'python cortana addcommand [nouns] [verbs] [modulefilename]
+
+In the nouns argument, include nouns you'll commonly call your module by. For example, if you'll say "what time is it" to see the time, an ideal noun would be time. Do the same for verbs. If you use multiple nouns or verbs, it's best to separate them by commas. Don't be too extensive as you don't want to cause conflictions with other modules, but don't be so narrow in your descriptions that you limit your future input to sounding unnatural. Finally, for modulefilename, include JUST the filename the module you wrote in step one (the ./module/ part is automatically added).
+
+
+FUTURE:
+- write a server so Cortana can be accessed remotely.
+- make it easier for Cortana to interact with other applications.
+- add voice-to-text functionality.
+- get list of installed modules
+- LOTS more.
+
