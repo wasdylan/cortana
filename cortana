@@ -4,7 +4,7 @@ import sys
 import os
 import re
 import sqlite3
-import difflib
+import operator
 import nltk
 from nltk.tag.simplify import simplify_wsj_tag
 
@@ -53,6 +53,7 @@ def addmodule(module, example):
 	conn.commit()
 
 def think(input):
+	
 	# analyze input
 	tagged = tag(input)
 	indx = nltk.Index((value, key) for (key, value) in tagged)
@@ -61,11 +62,70 @@ def think(input):
 	for verb in indx["V"]:
 		qp = qp+" V LIKE '%"+verb+"%' OR"
 	qp = qp.strip("OR")
+	
 	# match interpreted data to command
+	potentials = ("unknown", 0)
 	query = "SELECT * FROM commands WHERE "+qp
 	for row in cursor.execute(query):
-		module = row[19]
-		
+		strength = 1
+		for i in indx["ADJ"]:
+			if i in row[1]:
+				strength = strength + 1
+		for i in indx["ADV"]:
+			if i in row[2]:
+				strength = strength + 1
+		for i in indx["CNJ"]:
+			if i in row[3]:
+				strength = strength + 1
+		for i in indx["DET"]:
+			if i in row[4]:
+				strength = strength + 1
+		for i in indx["EX"]:
+			if i in row[5]:
+				strength = strength + 1
+		for i in indx["MOD"]:
+			if i in row[6]:
+				strength = strength + 1
+		for i in indx["N"]:
+			if i in row[7]:
+				strength = strength + 3
+		for i in indx["NP"]:
+			if i in row[8]:
+				strength = strength + 1
+		for i in indx["NUM"]:
+			if i in row[9]:
+				strength = strength + 1
+		for i in indx["PRO"]:
+			if i in row[10]:
+				strength = strength + 1
+		for i in indx["P"]:
+			if i in row[11]:
+				strength = strength + 1
+		for i in indx["TO"]:
+			if i in row[12]:
+				strength = strength + 1
+		for i in indx["UH"]:
+			if i in row[13]:
+				strength = strength + 1
+		for i in indx["V"]:
+			if i in row[14]:
+				strength = strength + 1
+		for i in indx["VD"]:
+			if i in row[15]:
+				strength = strength + 1
+		for i in indx["VG"]:
+			if i in row[16]:
+				strength = strength + 1
+		for i in indx["VN"]:
+			if i in row[17]:
+				strength = strength + 1
+		for i in indx["WH"]:
+			if i in row[18]:
+				strength = strength + 1
+		potentials = potentials, (row[19], strength)
+	
+	bestmatch = max(potentials, key=operator.itemgetter(1))
+	module = bestmatch[0]
 	os.system("python modules/"+module)
 
 	# os.system("python modules/%s" % (module))
