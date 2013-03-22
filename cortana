@@ -6,6 +6,7 @@ import re
 import sqlite3
 import difflib
 import nltk
+from nltk.tag.simplify import simplify_wsj_tag
 
 conn = sqlite3.connect("cerebrum.db")
 cursor = conn.cursor()
@@ -15,54 +16,70 @@ def config():
 	cursor = conn.cursor()
 	cursor.execute("""CREATE TABLE commands (
 					id INTEGER PRIMARY KEY,
-					noun text,
-					verb text,
+					ADJ text,
+					ADV text,
+					CNJ text,
+					DET text,
+					EX text,
+					MOD text,
+					N text,
+					NP text,
+					NUM text,
+					PRO text,
+					P text,
+					T0 text,
+					UH text,
+					V text,
+					VD text,
+					VG text,
+					VN text,
+					WH text,
 					module text
 					) 
 					""")
 	conn.close()
 	
-def addmodule(noun, verb, module):
-	cursor.execute("INSERT INTO commands (noun, verb, module) VALUES ('"+noun+"', '"+verb+"', '"+module+"')")
+def tag(input):
+	tokens = nltk.word_tokenize(input)
+	tagged = nltk.pos_tag(tokens)
+	simplified = [(word, simplify_wsj_tag(tag)) for word, tag in tagged]
+	
+	return simplified
+	
+def addmodule(module, example):
+	tagged = tag(example)
+	indx = nltk.Index((value, key) for (key, value) in tagged)
+	cursor.execute("INSERT INTO commands (ADJ, ADV, CNJ, DET, EX, MOD, N, NP, NUM, PRO, P, T0, UH, V, VD, VG, VN, WH, module) VALUES ('"+str(",".join(indx["ADJ"]))+"', '"+str(",".join(indx["ADV"]))+"', '"+str(",".join(indx["CNJ"]))+"', '"+str(",".join(indx["DET"]))+"', '"+str(",".join(indx["EX"]))+"', '"+str(",".join(indx["MOD"]))+"', '"+str(",".join(indx["N"]))+"', '"+str(",".join(indx["NP"]))+"', '"+str(",".join(indx["NUM"]))+"', '"+str(",".join(indx["PRO"]))+"', '"+str(",".join(indx["P"]))+"', '"+str(",".join(indx["TO"]))+"', '"+str(",".join(indx["UH"]))+"', '"+str(",".join(indx["V"]))+"', '"+str(",".join(indx["VD"]))+"', '"+str(",".join(indx["VG"]))+"',  '"+str(",".join(indx["VN"]))+"',  '"+str(",".join(indx["WH"]))+"', '"+module+"')")
 	conn.commit()
 
 def think(input):
-	# assign shit to avoid errors
-	module = ""
-	N = ""
-	V = ""
-	P = ""
-	J = ""
+	# analyze input
+	tagged = tag(input)
+	indx = nltk.Index((value, key) for (key, value) in tagged)
 	
-	# analyze sentence
-	tokens = nltk.word_tokenize(input)
-	tagged = nltk.pos_tag(tokens)
-	print tagged
-	for tag in tagged:
-		if tag[1] == "NN":
-			N = tag[0]
-		if tag[1] == "VBZ" or tag[1] == "VB" or tag[1] == "VBP":
-			V = tag[0]
-		if tag[1] == "PRP":
-			P = tag[0]
-		if tag[1] == "JJ":
-			J = tag[0]
-	
+	qp = ""
+	for verb in indx["V"]:
+		qp = qp+" V LIKE '%"+verb+"%' OR"
+	qp = qp.strip("OR")
 	# match interpreted data to command
-	query = "SELECT * FROM commands WHERE verb LIKE '%"+V+"%' AND noun LIKE '%"+N+"%' LIMIT 1"
+	query = "SELECT * FROM commands WHERE "+qp
 	for row in cursor.execute(query):
-		module=row[3]
-	
-	os.system("python modules/"+module+" %s %s %s %s" % (N, V, P, J))
+		module = row[19]
+		
+	os.system("python modules/"+module)
 
 	# os.system("python modules/%s" % (module))
 	# os.system("python modules/%s|espeak" % (module))
 
 
 input = sys.argv[1]
+input = str.lower(input)
 
 if input == "addcommand":
-	addmodule(sys.argv[2], sys.argv[3], sys.argv[4])
+	module = sys.argv[2]
+	example = sys.argv[3]
+	
+	addmodule(module, example)
 elif input == "config":
 	config()
 else:
